@@ -1,0 +1,78 @@
+---
+title: Whitening
+author: Erik-Jan van Kesteren
+date: '2017-03-01'
+slug: whitening
+categories:
+  - R
+  - Statistics
+tags:
+  - R
+  - Statistics
+  - Whitening
+  - Genes
+  - Intuition
+---
+
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>The work of Verena Zuber and Korbinian Strimmer<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a> <a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a> <a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a> has inspired me to create this post. The journal articles I linked to in the footnote are absolutely worth reading! I certainly enjoyed them. In this blog, I try to convey my understanding of their work on gene selection and data whitening / decorrelation as a preprocessing step.</p>
+</div>
+<div id="gene-selection" class="section level2">
+<h2>Gene selection</h2>
+<p>I stumbled upon whitening through my thesis research. In my thesis, I am looking at filter methods for feature selection in high-dimensional data, specifically in microarray (genetic) data. There are many different microarray and gene sequencing methods, but for simplicity let’s assume that microarray data is <em>information on the level of gene expression</em> for each hybridised<a href="#fn4" class="footnoteRef" id="fnref4"><sup>4</sup></a> gene. The goal with these data is often classification into two groups, e.g., malignant or benign. Because the high-dimensional nature of these data does not allow us to build a simple classification model (sometimes over 20 000 genes are hybridised!), we need to <em>select</em> genes which are important for classification<a href="#fn5" class="footnoteRef" id="fnref5"><sup>5</sup></a>.</p>
+<p>Let’s take an example: we want to classify tissue in two categories: <span style="color:#006400">green</span> and <span style="color:#00008B">blue</span>. For this, we collect pieces of <span style="color:#006400">green</span> and <span style="color:#00008B">blue</span> tissue from as many participants (<span class="math inline">\(n\)</span>) as possible, and we process those pieces to get their high-dimensional genomic microarray data. What results is an <span class="math inline">\(n \times p\)</span> data matrix, where <span class="math inline">\(p\)</span> is the amount of columns or genes hybridised<a href="#fn6" class="footnoteRef" id="fnref6"><sup>6</sup></a>. Our task is to select the subset <span class="math inline">\(q \in p\)</span> of genes (features) which can predict the classes best.</p>
+</div>
+<div id="filtering" class="section level2">
+<h2>Filtering</h2>
+<p>Aside from using black-box methods such as regularisation, support vector machines, or random forests, the most simple way of selecting the subset <span class="math inline">\(q\)</span> is through <em>filter methods</em>. Many filter methods exist<a href="#fn7" class="footnoteRef" id="fnref7"><sup>7</sup></a>, but the most straightforward one is as follows: Select the <span class="math inline">\(k\)</span> genes with the highest <em>differential expression</em>, that is <span class="math inline">\(\text{abs}(\mu_{green}-\mu_{blue})\)</span>. The intuition behind this is this: genes that vary a lot across groups are very “predictive” of the class which their objects of study come from. For example, take the two hypothetical genes with expression levels below:</p>
+<p><img src="/blog/2017-03-01-whitening_files/figure-html/differential-1.svg" width="672" style="display: block; margin: auto;" /><img src="/blog/2017-03-01-whitening_files/figure-html/differential-2.svg" width="672" style="display: block; margin: auto;" /> The gene with the small differential expression has more overlap between classes. Hence, if we would classify based on this gene with a method such as LDA<a href="#fn8" class="footnoteRef" id="fnref8"><sup>8</sup></a> or logistic regression, our misclassification rate would be higher.</p>
+</div>
+<div id="correcting-for-variance" class="section level2">
+<h2>Correcting for variance</h2>
+<p>There is a problem with this approach: the variance of gene expression might differ. Not taking this into account might mean that you consider a gene with high mean difference and even higher variance to be more important than a gene with moderate mean difference but a low variance. Luckily, this problem has been solved ages ago, by using the following quantity instead of the simple mean difference: <span class="math display">\[ \frac{\mu_{green}-\mu_{blue}}{\sigma} \cdot c \]</span>, where <span class="math inline">\(c = \left( \frac{1}{n_{green}} + \frac{1}{n_{blue}} \right)^{-1/2}\)</span></p>
+<p>Yes, this is a <em>t</em>-score. As can be seen from the equation, we are correcting for the variance in the original data. We can do this for many genes <span class="math inline">\((a, b, ...)\)</span> at once, if we collect the variance of each gene expression in a diagonal matrix and the group means in vectors like so:</p>
+<p><span class="math display">\[\mathbf{V} = \begin{bmatrix}\sigma_{a} &amp; 0 \\ 0 &amp; \sigma_{b}\end{bmatrix}, \quad \vec{\mu}_{green} = \begin{bmatrix} \mu^{a}_{green} \\ \mu^{b}_{green} \end{bmatrix}, \quad \vec{\mu}_{blue} = \begin{bmatrix} \mu^{a}_{blue} \\ \mu^{b}_{blue} \end{bmatrix}\]</span></p>
+<p>Then we could write the t-score equation as follows<a href="#fn9" class="footnoteRef" id="fnref9"><sup>9</sup></a>:</p>
+<p><span class="math display">\[t = c \cdot \mathbf{V}^{-1/2}(\vec{\mu}_{green}-\vec{\mu}_{blue})\]</span></p>
+<p>Using this score is the same as performing a differential expression score analysis on <em>standardised</em> data<a href="#fn10" class="footnoteRef" id="fnref10"><sup>10</sup></a>. In standardisation, for each gene expression vector you would subtract the mean and divide by the standard deviation. The resulting vector has a standard deviation of 1 and a mean of 0. If you standardise, you basically <em>rescale</em> the variable, so the function in <code>R</code> to do this is called <code>scale()</code>.</p>
+</div>
+<div id="whitening" class="section level2">
+<h2>Whitening</h2>
+<p>Over and above <em>t</em>-score filter feature selection, there is one more issue. This issue is more complex, because unlike the previous issue it lives in multivariate space. Consider the following figure:</p>
+<p><img src="/blog/2017-03-01-whitening_files/figure-html/separation-1.png" width="2800" /></p>
+<p>In this case, Gene a and Gene b individually have a hard time separating the blue and the green category both on their differential expression scores and on their t-scores. You can visualise this by looking at the <em>marginal distributions</em><a href="#fn11" class="footnoteRef" id="fnref11"><sup>11</sup></a>.</p>
+<p>Multivariately, however, there is little overlap between the <span style="color:#006400">green</span> and <span style="color:#00008B">blue</span> classes. This happens because Gene a and Gene b are <em>correlated</em>. To correct for this correlation, we can perform another step over and above standardisation: <em>whitening</em>, or <em>decorrelation</em>. Hence the title of this blog. In the linear algebra notation of transforming the original data <span class="math inline">\(x\)</span> to the whitened data <span class="math inline">\(z\)</span> (specifically using ZCA-cor whitening), it is easy to see why it is an <em>additional</em> step:</p>
+<p><span class="math display">\[z = \mathbf{P}^{-1/2}\mathbf{V}^{-1/2}x\]</span>, where <span class="math inline">\(\mathbf{P}\)</span> indicates the correlation matrix.</p>
+<p>So let’s see what this transformation does. Below you can find a scatterplot of randomly generated correlating bivariate data, much like <em>one of</em> the ellipses in the graph above. It moves from raw data in the first panel through standardised data (see the axis scale change) to decorrelated data in the third panel. The variance-covariance matrix used for generating the data was as follows:</p>
+<p><span class="math display">\[\mathbf{\Sigma} = \begin{bmatrix}5 &amp; 2.4 \\ 2.4 &amp; 2 \end{bmatrix}\]</span></p>
+<p><img src="/blog/2017-03-01-whitening_files/figure-html/whitening-1.png" width="4800" style="display: block; margin: auto;" /></p>
+<p>The third panel shows where the name “whitening” comes from: the resulting data looks like bivariate <a href="https://en.wikipedia.org/wiki/White_noise#White_noise_vector">white noise</a>. So what happens if we perform this transformation to the two-class case? Below I generated this type of data and performed the whitening procedure. I have plotted the marginal distributions for Gene a as well, to show the effect of whitening in univariate space (note the difference in scale).</p>
+<p><img src="/blog/2017-03-01-whitening_files/figure-html/whitening2class-1.png" width="4800" style="display: block; margin: auto;" /></p>
+<p>As can be seen from the plots, the whitened data shows a stronger differentiation between the classes in univariate space: the overlapping area in the marginal distribution is relatively low when compared to that of the raw data. <strong>Taking into account the correlation it has, Gene a thus has more information about the classes than we would assume based on its differential expression or its <em>t</em>-score</strong>.</p>
+</div>
+<div id="cat-score" class="section level2">
+<h2>cat score</h2>
+<p>Using this trick, Zuber and Strimmer (2009) developed the <em>correlation-adjusted t-score</em>, or cat score, which extends the <em>t</em>-score as follows:</p>
+<p><span class="math display">\[\text{cat} = c \cdot \mathbf{P}^{-1/2}\mathbf{V}^{-1/2}(\vec{\mu}_{green}-\vec{\mu}_{blue})\]</span></p>
+<p>In their original paper, they show that this indeed works better than the unadjusted t-score in a variety of settings. One assumption that this procedure has is that it assumes equal variance in both classes. This might be something to work on!</p>
+<p>If you made it all the way here, congratulations! I hope you learnt something. I certainly did while writing and coding all of this information into a legible format. Let me know what you think via <a href="../index.html#About">email</a>!</p>
+</div>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Kessy, A., Lewin, A., &amp; Strimmer, K. (2015). <a href="https://arxiv.org/abs/1512.00809">Optimal whitening and decorrelation.</a> arXiv preprint arXiv:1512.00809.<a href="#fnref1">↩</a></p></li>
+<li id="fn2"><p>Zuber, V., &amp; Strimmer, K. (2009). <a href="http://bioinformatics.oxfordjournals.org/content/25/20/2700">Gene ranking and biomarker discovery under correlation.</a> <em>Bioinformatics, 25</em>(20), 2700-2707.<a href="#fnref2">↩</a></p></li>
+<li id="fn3"><p>Zuber, V., &amp; Strimmer, K. (2011). <a href="https://arxiv.org/abs/1007.5516">High-dimensional regression and variable selection using CAR scores.</a> <em>Statistical Applications in Genetics and Molecular Biology, 10</em>(1).<a href="#fnref3">↩</a></p></li>
+<li id="fn4"><p>Hybridisation is the process of the material (often dna or rna) attaching to the cells of the microarray matrix. The more specific material there is, the higher the resulting intensity in that matrix cell<a href="#fnref4">↩</a></p></li>
+<li id="fn5"><p>or use more complex methods with other disadvantages<a href="#fnref5">↩</a></p></li>
+<li id="fn6"><p>Note that the problem of high dimensionality is often denoted the <span class="math inline">\(n \gg p\)</span> problem<a href="#fnref6">↩</a></p></li>
+<li id="fn7"><p>Look at <a href="https://www.bioconductor.org/packages/3.3/bioc/manuals/CMA/man/CMA.pdf#page=39">this pdf page</a> of the CMA r package user manual<a href="#fnref7">↩</a></p></li>
+<li id="fn8"><p><a href="https://en.wikipedia.org/wiki/Linear_discriminant_analysis">Linear Discriminant Analysis</a><a href="#fnref8">↩</a></p></li>
+<li id="fn9"><p>Isn’t linear algebra great?<a href="#fnref9">↩</a></p></li>
+<li id="fn10"><p>All the math comes from Kessy, Lewin, &amp; Strimmer (2015)<a href="#fnref10">↩</a></p></li>
+<li id="fn11"><p>by collapsing the densities of the green and the blue classes onto the margin (either the x or y axis) we can construct a figure such as the first two images in this post. See <a href="http://i.stack.imgur.com/sf2zg.jpg">this image</a> I blatantly ripped from somewhere for an example of a bivariate distribution decomposed into two marginals<a href="#fnref11">↩</a></p></li>
+</ol>
+</div>

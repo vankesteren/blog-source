@@ -1,0 +1,132 @@
+---
+title: Baron Bootstrap
+author: Erik-Jan van Kesteren
+date: '2017-05-01'
+slug: baron-bootstrap
+categories:
+  - R
+  - Statistics
+  - Bootstrap
+tags:
+  - R
+  - Statistics
+  - Bootstrap
+  - Intuition
+---
+
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>The word “bootstrap” comes from an old story about a hero - Baron Munchausen - who is riding around on his horse in a forest and suddenly gets stuck in a swamp. He screams for help but there is no one around who hears his voice! Luckily our hero does not give up and gets a great idea: “what if I just pull myself out of this swamp?”. He grabs the <em>straps</em> of his <em>boots</em> and pulls himself loose. Fantastic - he just invented bootstrapping.</p>
+<img src="../../img/munchausen.svg" style="width:40%;display:block; margin-left:auto; margin-right:auto"></img>
+<center>
+<em>Baron Munchausen ponytailing out of another swamp.</em><a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a>
+</center>
+<p><br/></p>
+<p>Physics-defying stories aside, bootstrapping has become a common term for something seemingly impossible or counterintuitive. In this blogpost I will try to generate an intuition for the properties of <em>statistical bootstrapping</em> - resampling from your data to approximate resampling from a population.</p>
+</div>
+<div id="the-population" class="section level2">
+<h2>The population</h2>
+<p>In order to explain bootstrapping, we need to generate an example. Let’s assume we want to know the average height of all the people in the Netherlands. With the power of <code>R</code> we can easily generate a population of 17104879 people (according to CBS, the amount of registered inhabitants of the Netherlands as per the creation of this post<a href="#fn2" class="footnoteRef" id="fnref2"><sup>2</sup></a>). The Dutch are just about the tallest people on the planet, where the men are 180,7 centimeters tall, on average<a href="#fn3" class="footnoteRef" id="fnref3"><sup>3</sup></a>.</p>
+<p>Here is some more information about my population. For the sake of simplicity let’s assume that all inhabitants are actually men (which would be a disaster). The tallest Dutch man is 223 centimeters<a href="#fn4" class="footnoteRef" id="fnref4"><sup>4</sup></a> (which is very tall) and the shortest Dutch man is ridiculously hard to find on the internet. I have an intuition that it is further away from the mean of 180.7, which implies some negative skewness, but that’s not what this post is about so let’s also assume we have a non-skewed normal distribution.</p>
+<p>After some fiddling with the standard deviation variable, I simulated the following population:</p>
+<pre class="r"><code># generate population data
+set.seed(3665364)
+pop &lt;- rnorm(17104879, mean = 180.7, sd = 7.5)</code></pre>
+<p><img src="/blog/2018-03-01-baron-bootstrap_files/figure-html/popplot-1.png" width="672" /></p>
+<p>Let’s look how tall the tallest man from the hypothetical all-men Netherlands is, along with some other statistics!</p>
+<pre><code>##  Statistics about the population:
+##  --------------------------------
+##  The shortest person is  142.0121  cm tall.
+##  Mean height is  180.6979  cm.
+##  Median height is  180.698  cm.
+##  The 5th and 95th percentiles are  168.3612 193.0287 cm.
+##  The tallest person is  222.2139  cm tall.</code></pre>
+<p>That seems close enough to something I’d consider a population.</p>
+</div>
+<div id="the-set-up" class="section level2">
+<h2>The set-up</h2>
+<p>Normally, when we want to estimate some population parameter such as the mean height, we cannot measure all persons. Therefore, we create a <em>representative sample</em> of persons from this population that we <em>can</em> measure. The size of our sample (<span class="math inline">\(N\)</span>) should depend on how precise we want our final estimate to be - the <em>standard error</em> of a statistic depends directly on the number of persons in our sample. For the mean, the standard error is usually calculated as follows:</p>
+<p><span class="math display">\[ se_\bar{x} = \frac{\hat{\sigma}}{\sqrt{N}}\text{, where } \hat{\sigma} = \sqrt{\frac{1}{N-1}\sum_{i=1}^N(x_i-\bar{x})^2} \]</span></p>
+<p>With increasing <span class="math inline">\(N\)</span>, the <span class="math inline">\(\hat{\sigma}\)</span> becomes smaller, and the <span class="math inline">\(se_\bar{x}\)</span> becomes smaller as well. In words: with a larger sample comes an increase in precision (a reduction in error).</p>
+<p>We can display the precision in the form of <em>confidence intervals</em> (CI). A <span class="math inline">\(p\%\)</span> CI about an estimate indicates the area in which upon infinitely repeated sampling the TRUE parameter lies <span class="math inline">\(p\%\)</span> of the time. In other words, if we would redo our experiment infinite amount of times, a 95% confidence interval will <em>cover</em> the true parameter in 95% of the replications.<a href="#fn5" class="footnoteRef" id="fnref5"><sup>5</sup></a></p>
+<p>In real life, there is of course no such thing as infinite resampling; we only sample once and use the CI as an indication of precision. Let’s look at how the precision of the mean estimate increases as we take larger samples from the above population.</p>
+<pre class="r"><code># randomly sample from population
+small &lt;- sample(pop, 20)
+medium &lt;- sample(pop, 100)
+large &lt;- sample(pop, 1000)</code></pre>
+<p><img src="/blog/2018-03-01-baron-bootstrap_files/figure-html/prec-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>As you can see, the CI from each sample covers the true population value in this case. We can create these confidence intervals because we know the <em>sampling distribution</em> of the mean - the distribution of the mean that arises upon repeated sampling. For means of a normally distributed population, the sampling distribution is the familiar Student’s <em>t</em>-distribution. We use the probability density to determine our 95% CI (the <code>1.96</code> in the code above).</p>
+<p>But what if we don’t exactly know what the sampling distribution is? For example, what happens if we do not have a normally distributed population? It turns out there is another way of generating CIs.</p>
+</div>
+<div id="the-bootstrap" class="section level2">
+<h2>The bootstrap</h2>
+<p>The bootstrap has these steps:</p>
+<ol style="list-style-type: decimal">
+<li>approximate the sampling distribution by taking the mean of n repeated samples with replacement from your original sample.</li>
+</ol>
+<p>Huh? Only one step? Is it that simple?</p>
+<p>Yes:</p>
+<pre class="r"><code># Let&#39;s bootstrap 10000 times!
+mean_sampling_distribution &lt;- numeric(10000)
+for (i in 1:10000){
+  bootstrap_sample &lt;- sample(medium, replace = T)
+  mean_sampling_distribution[i] &lt;- mean(bootstrap_sample)
+}</code></pre>
+<p><img src="/blog/2018-03-01-baron-bootstrap_files/figure-html/bootplot-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>Great! Now we have an <em>empirical</em> sampling distribution. What do we do now in order to get an estimate of our precision in the form of a confidence interval? That is simple too: sort the means attained from the bootstrap samples from low to high, and look at the 2.5th and 97.5th percentile. This yields a 95% bootstrap CI!</p>
+<pre class="r"><code>CIbootstrap &lt;- quantile(mean_sampling_distribution, 
+                        probs = c(0.025,0.975))</code></pre>
+<p><img src="/blog/2018-03-01-baron-bootstrap_files/figure-html/bootCIplot-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>As you can see, that’s indeed very close to the original theoretical CI.</p>
+</div>
+<div id="the-advantage" class="section level2">
+<h2>The advantage</h2>
+<p>The advantage of this method is that this does not require the researcher to know the exact form of the sampling distribution. We can now create CIs (and thereby an estimate of precision) for nearly any statistic that we think about, such as (a) the fifth percentile, (b) the median, (c) the ninety-ninth percentile, (d) this completely arbitrary statistic called <em>van kesteren measure</em> that I just came up with: <span class="math display">\[\hat{k} = \bar{x}\cdot\frac{1}{N}\sum_{i=1}^N |x_i^\frac{1}{3}-\sqrt{\text{median}(x)}|\]</span></p>
+<p>Probably there are analytical solutions to the sampling distributions of these measures (and I think it is likely that they have been derived at some point in the 1940s) but I don’t know them so I’ll bootstrap:</p>
+<pre class="r"><code>vkmeasure &lt;- function(x){
+  return(mean(x)/length(x)*sum(abs(x^(1/3)-sqrt(median(x)))))
+}
+
+perc5 &lt;- median &lt;- perc99 &lt;- vkmeas &lt;- numeric(10000)
+
+for (i in 1:10000){
+  bootstrap_sample &lt;- sample(large, replace = T)
+  perc5[i] &lt;- quantile(bootstrap_sample, probs = 0.05)
+  median[i] &lt;- median(bootstrap_sample)
+  perc99[i] &lt;- quantile(bootstrap_sample, probs = 0.99)
+  vkmeas[i] &lt;- vkmeasure(bootstrap_sample)
+}</code></pre>
+<p><img src="/blog/2018-03-01-baron-bootstrap_files/figure-html/bootCI2plot-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>We have magically done away with a problem - that of distributional assumptions - by pulling ourselves up from our bootstraps, not unlike our friend Baron Munchausen! Fantastic! Or is it?</p>
+<p>Of course, there are some downsides to this approach; it is not the magical solution to getting rid of distributional assumptions in any situation. As you can see in the Fifth Percentile graph in the image above, there is some discreteness to the distribution that we do not expect in the actual sampling distribution of the fifth percentile characteristic:</p>
+<pre class="r"><code># Sample 10000 times from the ACTUAL population
+perc5actual &lt;- numeric(10000)
+for (i in 1:10000){
+  smp &lt;- sample(pop, 1000)
+  perc5actual[i] &lt;- quantile(smp, probs = 0.05)
+}</code></pre>
+<p><img src="/blog/2018-03-01-baron-bootstrap_files/figure-html/FifthPercplot-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>In this case the bootstrap sampling distribution does not work so well for determining the uncertainty or 95% confidence interval around the statistic of interest. As seen in this figure, the actual sampling distribution looks quite different to that inferred from bootstrap. How would we solve this problem? There are several ways:</p>
+<ol style="list-style-type: decimal">
+<li>find the analytical sampling distribution form and construct a CI based on that</li>
+<li>make a larger sample which will contain more different values (often infeasible)</li>
+<li>smooth the bootstrap procedure, for example by adding some random noise to the samples<a href="#fn6" class="footnoteRef" id="fnref6"><sup>6</sup></a></li>
+</ol>
+</div>
+<div id="take-home-message" class="section level2">
+<h2>Take-home message</h2>
+<p>The bootstrap is a fantastic means of nonparametrically determining the uncertainty of your estimate, but it should be used with care. Inspect the resulting distribution for discreteness such as in the 5th percentile graph above. And mathematical statistics is not completely obsolete ;)</p>
+</div>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Source: <a href="http://en.citizendium.org/wiki/Image:Dore-Munchausen-pull.jpg" class="uri">http://en.citizendium.org/wiki/Image:Dore-Munchausen-pull.jpg</a><a href="#fnref1">↩</a></p></li>
+<li id="fn2"><p>Source: <a href="https://www.cbs.nl/nl-nl/visualisaties/bevolkingsteller" class="uri">https://www.cbs.nl/nl-nl/visualisaties/bevolkingsteller</a> as per the writing of this post.<a href="#fnref2">↩</a></p></li>
+<li id="fn3"><p>Source: <a href="https://is.gd/cbsdata" class="uri">https://is.gd/cbsdata</a><a href="#fnref3">↩</a></p></li>
+<li id="fn4"><p>Quick google searchy source: <a href="https://www.langzijn.nl/tag/langste-man-nederland" class="uri">https://www.langzijn.nl/tag/langste-man-nederland</a><a href="#fnref4">↩</a></p></li>
+<li id="fn5"><p>this explanation follows a frequentist framework of statistics. For an interesting sidestep and Bayesian credible intervals, do read this paper - <a href="http://doi.org/10.3758/s13423-015-0947-8" class="uri">http://doi.org/10.3758/s13423-015-0947-8</a><a href="#fnref5">↩</a></p></li>
+<li id="fn6"><p>Yes, the source is a wikipedia link: <a href="https://en.wikipedia.org/wiki/Bootstrapping_(statistics)#Smoothed_bootstrap" class="uri">https://en.wikipedia.org/wiki/Bootstrapping_(statistics)#Smoothed_bootstrap</a><a href="#fnref6">↩</a></p></li>
+</ol>
+</div>
