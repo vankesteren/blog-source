@@ -2,6 +2,6 @@
 title = "Home"
 +++
 
-_This is the home page. It will display the blog section if there is one, and a text before._
+Welcome to my website! It is under construction - I am transferring it from an old repository.
 
-Hey ! Welcome to the **Cocoa Enhanced theme**. Here are some articles :
+In the meantime, you can read the articles I have already transferred or go to the [about page](./about).

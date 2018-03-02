@@ -38,6 +38,6 @@ social_banner = "img/banner.png"
 usesmallsummarycard = true
 posts_navigation = true
 # issoHost = "comments.domain.tld:1234"
-githubRepo = "vankesteren/rblog"
+#githubRepo = "vankesteren/blog-source"
 small_banner_logo = false
 uselatex = true
