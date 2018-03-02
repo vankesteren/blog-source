@@ -1,0 +1,75 @@
+---
+title: Basketball Training
+author: Erik-Jan van Kesteren
+date: '2018-03-02'
+slug: basketball-training
+draft: true
+categories:
+  - R
+  - Analysis
+tags:
+  - R
+  - Analysis
+  - Dataset
+  - Markov
+---
+
+
+```{r setup, include=FALSE, echo=FALSE,render=FALSE,warning=FALSE,background=TRUE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(dev = 'svg')
+library(ggplot2)
+```
+
+## Introduction
+
+I was on holiday and had to wait a while. Fortunately, close to where I was sitting there was a kid playing basketball all by himself. Of course I had to record how many hits and misses he made, to keep it as a nice dataset for further analysis.
+
+Here is the dataset:
+```{r init}
+b <- c("miss","miss","miss","hit","miss","hit","miss", "miss",
+       "hit","hit","miss","miss","miss","miss", "miss","miss",
+       "miss","hit","hit","hit","miss","hit")
+```
+
+## What can we do with this?
+Firstly, we can describe how often the kid hits manages to score a point:
+
+```{r plot, echo = FALSE}
+ggplot(data.frame(basket = b), aes(x = basket)) + 
+  geom_bar() + 
+  theme_minimal()
+```
+
+So it looks like the kid misses a bit more than he hits. But there is much more information in this dataset: besides whether the kid hits or misses, we can say something about the _sequence_ of these events. We can do this using a transition matrix;
+
+$$
+\begin{bmatrix}
+A & B \\
+C & D 
+\end{bmatrix}
+$$
+Entering observed probabilities in $\{A, B, C, D\}$ this matrix tells us how likely it is that:
+
+- $A$ a hit is followed by another hit
+- $B$ a hit is followed by a miss
+- $C$ a miss is followed by a hit
+- $D$ a miss is followed by another hit
+  
+Here is an R function for generating the transition matrix:
+```{r transmat}
+transMat <- function(x, prob = TRUE) {
+  X <- t(as.matrix(x))
+  tt <- table( c(X[,-ncol(X)]), c(X[,-1]) )
+  if(prob) tt <- tt / rowSums(tt)
+  tt
+}
+
+m <- transMat(b)
+print(m, digits = 2)
+
+```
+
+This transition matrix completely defines the 2-state markov chain. Assuming these probabilities are stable, we can now generate markov processes just like the one we observed. And we can nicely visualise it using [this markov chain generator post](http://setosa.io/ev/markov-chains/) by [setosa](http://setosa.io/ev/). In the image below, A equals a miss, and B equals a hit. (Go ahead, play around, it's completely interactive!)
+
+<iframe src="http://setosa.io/markov/index.html#%7B%22tm%22%3A%5B%5B0.43%2C0.57%5D%2C%5B0.36%2C0.64%5D%5D%7D" width="100%" height="350px" style="border:none"></iframe>

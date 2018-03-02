@@ -241,4 +241,4 @@ $$\text{cat} = c \cdot \mathbf{P}^{-1/2}\mathbf{V}^{-1/2}(\vec{\mu}_{green}-\vec
 In their original paper, they show that this indeed works better than the unadjusted t-score in a variety of settings. One assumption that this procedure has is that it assumes equal variance in both classes. This might be something to work on!
 
 
-If you made it all the way here, congratulations! I hope you learnt something. I certainly did while writing and coding all of this information into a legible format. Let me know what you think via [email](../index.html#About)!
+If you made it all the way here, congratulations! I hope you learnt something. I certainly did while writing and coding all of this information into a legible format. Let me know what you think via [email](../../about)!

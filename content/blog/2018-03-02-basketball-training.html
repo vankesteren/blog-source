@@ -1,0 +1,61 @@
+---
+title: Basketball Training
+author: Erik-Jan van Kesteren
+date: '2018-03-02'
+slug: basketball-training
+draft: true
+categories:
+  - R
+  - Analysis
+tags:
+  - R
+  - Analysis
+  - Dataset
+  - Markov
+---
+
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>I was on holiday and had to wait a while. Fortunately, close to where I was sitting there was a kid playing basketball all by himself. Of course I had to record how many hits and misses he made, to keep it as a nice dataset for further analysis.</p>
+<p>Here is the dataset:</p>
+<pre class="r"><code>b &lt;- c(&quot;miss&quot;,&quot;miss&quot;,&quot;miss&quot;,&quot;hit&quot;,&quot;miss&quot;,&quot;hit&quot;,&quot;miss&quot;, &quot;miss&quot;,
+       &quot;hit&quot;,&quot;hit&quot;,&quot;miss&quot;,&quot;miss&quot;,&quot;miss&quot;,&quot;miss&quot;, &quot;miss&quot;,&quot;miss&quot;,
+       &quot;miss&quot;,&quot;hit&quot;,&quot;hit&quot;,&quot;hit&quot;,&quot;miss&quot;,&quot;hit&quot;)</code></pre>
+</div>
+<div id="what-can-we-do-with-this" class="section level2">
+<h2>What can we do with this?</h2>
+<p>Firstly, we can describe how often the kid hits manages to score a point:</p>
+<p><img src="/blog/2018-03-02-basketball-training_files/figure-html/plot-1.svg" width="672" /></p>
+<p>So it looks like the kid misses a bit more than he hits. But there is much more information in this dataset: besides whether the kid hits or misses, we can say something about the <em>sequence</em> of these events. We can do this using a transition matrix;</p>
+<p><span class="math display">\[
+\begin{bmatrix}
+A &amp; B \\
+C &amp; D 
+\end{bmatrix}
+\]</span> Entering observed probabilities in <span class="math inline">\(\{A, B, C, D\}\)</span> this matrix tells us how likely it is that:</p>
+<ul>
+<li><span class="math inline">\(A\)</span> a hit is followed by another hit</li>
+<li><span class="math inline">\(B\)</span> a hit is followed by a miss</li>
+<li><span class="math inline">\(C\)</span> a miss is followed by a hit</li>
+<li><span class="math inline">\(D\)</span> a miss is followed by another hit</li>
+</ul>
+<p>Here is an R function for generating the transition matrix:</p>
+<pre class="r"><code>transMat &lt;- function(x, prob = TRUE) {
+  X &lt;- t(as.matrix(x))
+  tt &lt;- table( c(X[,-ncol(X)]), c(X[,-1]) )
+  if(prob) tt &lt;- tt / rowSums(tt)
+  tt
+}
+
+m &lt;- transMat(b)
+print(m, digits = 2)</code></pre>
+<pre><code>##       
+##         hit miss
+##   hit  0.43 0.57
+##   miss 0.36 0.64</code></pre>
+<p>This transition matrix completely defines the 2-state markov chain. Assuming these probabilities are stable, we can now generate markov processes just like the one we observed. And we can nicely visualise it using <a href="http://setosa.io/ev/markov-chains/">this markov chain generator post</a> by <a href="http://setosa.io/ev/">setosa</a>. In the image below, A equals a miss, and B equals a hit. (Go ahead, play around, it’s completely interactive!)</p>
+<iframe src="http://setosa.io/markov/index.html#%7B%22tm%22%3A%5B%5B0.43%2C0.57%5D%2C%5B0.36%2C0.64%5D%5D%7D" width="100%" height="350px" style="border:none">
+</iframe>
+</div>

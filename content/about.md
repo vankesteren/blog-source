@@ -3,6 +3,8 @@ date = "2015-08-22"
 title = "About"
 +++
 
+<img src="../img/EJ.jpg" class="logo" style="display:block;width:25%;margin-left:auto;margin-right:auto;border-radius:50%;"></img>
+
 I am a PhD student under [Daniel Oberski](http://daob.nl) at the Methodology and Statistics department of Utrecht University. My research is on how we can incorporate high-dimensional data into structural equation models. I'm also a part-time programmer at [JASP](https://jasp-stats.org). You can get more information about me at my [linkedin](https://www.linkedin.com/in/erikjanvankesteren) and my [github](https://github.com/vankesteren/) accounts. If you want to get in contact, you can use my <script type="text/javascript">
 //<![CDATA[
 <!--
@@ -27,7 +29,10 @@ Here are some links to statistics-related things I enjoy:
 [distill journal](http://distill.pub),
 [Brilliantly Wrong](https://arogozhnikov.github.io/),
 [The Etz-Files](https://alexanderetz.com/),
-[Richard Morey](https://richarddmorey.org/),
+[Andrew Gelman](http://andrewgelman.com/),
 [r/dataisbeautiful](https://www.reddit.com/r/dataisbeautiful/),
 [Jeff Rouder](http://jeffrouder.blogspot.com),
-[A Compendium of Clean Graphs](http://shinyapps.org/apps/RGraphCompendium/index.php).
+[A Compendium of Clean Graphs](http://shinyapps.org/apps/RGraphCompendium/index.php),
+[Stan](http://mc-stan.org/),
+[JASP](https://jasp-stats.org/),
+[MSDSlab](https://msdatasciencelab.wordpress.com/).
