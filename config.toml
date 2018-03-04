@@ -25,7 +25,7 @@ logofile = "img/logo.png"
 faviconfile = "img/favicon.png"
 highlightjs = true
 # options for highlight.js (version, additional languages, and theme)
-highlightjslanguages = ["r", "python", "yaml", "js"]
+highlightjslanguages = ["r", "python", "yaml", "javascript"]
 progressively = true
 share = false
 latestpostcount = 10
@@ -36,7 +36,7 @@ twitter = "ejvankesteren"
 #facebook = "facebook_id"
 social_banner = "img/banner.png"
 usesmallsummarycard = true
-posts_navigation = true
+posts_navigation = false
 # issoHost = "comments.domain.tld:1234"
 #githubRepo = "vankesteren/blog-source"
 small_banner_logo = false

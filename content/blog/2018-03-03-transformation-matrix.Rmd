@@ -1,0 +1,77 @@
+---
+title: Transformation Matrix
+author: Erik-Jan van Kesteren
+date: '2018-03-03'
+slug: transformation-matrix
+draft: true
+categories:
+  - CSS
+  - Web
+  - Matrix
+tags:
+  - CSS
+  - Web
+  - Matrix
+---
+<style>
+  input[type=number] {
+    width:4em;
+    height:2em;
+    border:none;
+    text-align:center;
+    -moz-appearance:textfield;
+  }
+  input[type=number]::inner-spin-button, 
+  input[type=number]::outer-spin-button { 
+    appearance: none; 
+    margin: 0; 
+  }
+  form {
+    display:inline-block;
+    margin-left:auto;
+    margin-right:auto;
+    border-left:1pt solid black;
+    border-right: 1pt solid black;
+    width: auto;
+  }
+  #formcontainer {
+    text-align:center;
+  }
+</style>
+<div id="formcontainer">
+<form id="matform">
+  <input name="a" type="number" min="-2" max="2" step="0.01" value="1">
+  <input name="c" type="number" min="-2" max="2" step="0.01" value="0"><br>
+  <input name="b" type="number" min="-2" max="2" step="0.01" value="0">
+  <input name="d" type="number" min="-2" max="2" step="0.01" value="1">
+</form>
+</div>
+
+<br>
+<div id="svg-container" style="margin-left:auto;margin-right:auto;width:80%;min-height:200px;background-color:#FAFAFA">
+  <svg id="rectsvg" xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="-1 -2 3 3">
+    <g transform="scale(1,-1)">
+    <rect id="transhere" width="1" height="1" fill="rgba(0,0,255,0.2)" style="stroke-width:0.01;stroke:rgb(0,0,0);"/>
+    </g>
+  </svg>
+</div>
+<script type="text/javascript">
+  var frm = document.getElementById("matform");
+  function runForm() {
+    let a = Number(frm.elements[0].value);
+    let c = Number(frm.elements[1].value);
+    let b = Number(frm.elements[2].value);
+    let d = Number(frm.elements[3].value);
+    setMatrix(a,b,c,d,0,0);
+  }
+  function setMatrix(a,b,c,d,e,f) {
+    let mat = "matrix(" + [a,b,c,d,e,f].join(",") + ")";
+    document.getElementById("transhere").setAttribute("transform",mat);
+    if (a * d - c * b > 0) {
+      document.getElementById("transhere").setAttribute("fill","rgba(0,0,255,0.2)");
+    } else {
+      document.getElementById("transhere").setAttribute("fill","rgba(255,0,0,0.2)");
+    }
+  }
+  frm.onchange = runForm;
+</script>
