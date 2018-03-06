@@ -3,7 +3,7 @@ title: Transformation Matrix
 author: Erik-Jan van Kesteren
 date: '2018-03-03'
 slug: transformation-matrix
-draft: true
+draft: false
 categories:
   - CSS
   - Web
@@ -41,15 +41,46 @@ tags:
     text-align:center;
   }
 </style>
+<p>Any set of points can be represented in a matrix <span class="math inline">\(\boldsymbol{X}\)</span>. For example:</p>
+<p><span class="math display">\[ \boldsymbol{X} = \begin{bmatrix} 0 &amp; 0 \\ 0 &amp; 1 \\ 1 &amp; 1 \\ 1 &amp; 0 \end{bmatrix}\]</span> The four rows in this matrix correspond to four points in two-dimensional space. You can think of the first column as the x coordinate and the second column as the y coordinate of each point. For our chosen <span class="math inline">\(\boldsymbol{X}\)</span>, these points represent the corners of a unit square.</p>
+<p>We can define a transformation matrix <span class="math inline">\(\boldsymbol{T}\)</span> as a <span class="math inline">\(2\times 2\)</span> matrix which through post-multiplication transforms these points into <em>another</em> set of points in 2-dimensional space <span class="math inline">\(\boldsymbol{X&#39;}\)</span>. For example, we can take the identity matrix:</p>
+<p><span class="math display">\[\boldsymbol{T} = \boldsymbol{I} = \begin{bmatrix} 1 &amp; 0 \\ 0 &amp; 1 \end{bmatrix}\]</span></p>
+<p>This matrix is a kind of arbitrary transformation because by definition, <span class="math inline">\(\boldsymbol{X&#39;} = \boldsymbol{X} \times \boldsymbol{I} = \boldsymbol{X}\)</span>: the set of transformed points is the same as the set of original points.</p>
+<p>But what about a different transformation matrix, say</p>
+<p><span class="math display">\[\boldsymbol{T} = \begin{bmatrix} 1 &amp; 0.5 \\ 0 &amp; 1 \end{bmatrix}\]</span></p>
+<p>Now <span class="math inline">\(\boldsymbol{X&#39;}\)</span> is not equal to <span class="math inline">\(\boldsymbol{X}\)</span>: the points have been transformed! In particular, here we are dealing with a <em>skew</em>:</p>
+<p><span class="math display">\[\boldsymbol{X&#39;} = \boldsymbol{X} \times \boldsymbol{T} = \begin{bmatrix} 0 &amp; 0 \\ 0 &amp; 1 \\ 1 &amp; 1 \\ 1 &amp; 0 \end{bmatrix} \times \begin{bmatrix} 1 &amp; 0.5 \\ 0 &amp; 1 \end{bmatrix} = \begin{bmatrix} 0 &amp; 0 \\ 0.5 &amp; 1 \\ 1.5 &amp; 1 \\ 1 &amp; 0 \end{bmatrix}\]</span></p>
+<div id="lets-visualise-it" class="section level2">
+<h2>Let’s visualise it</h2>
+<p>Because this is all very abstract and a lot of numbers, below I’ve plotted the four points in <span class="math inline">\(\boldsymbol{X}\)</span>, connected them by lines, coloured the center, and applied the <em>skew</em> transformation, yielding <span class="math inline">\(\boldsymbol{X&#39;}\)</span>.</p>
+<p>I’ve also gone a bit further and made it interactive<a href="#fn1" class="footnoteRef" id="fnref1"><sup>1</sup></a>. So you can edit the numbers in the matrix and the unit square will transform accordingly. Play around with it to get an idea of transforming a set of points in 2-dimensional space.</p>
 <div id="formcontainer">
 <form id="matform">
-<input name="a" type="number" min="-2" max="2" step="0.01" value="1"> <input name="c" type="number" min="-2" max="2" step="0.01" value="0"><br> <input name="b" type="number" min="-2" max="2" step="0.01" value="0"> <input name="d" type="number" min="-2" max="2" step="0.01" value="1">
+<input name="a" type="number" step="0.01" value="1"> <input name="c" type="number" step="0.01" value="0.5"><br> <input name="b" type="number" step="0.01" value="0"> <input name="d" type="number" step="0.01" value="1">
 </form>
 </div>
 <br>
 <div id="svg-container" style="margin-left:auto;margin-right:auto;width:80%;min-height:200px;background-color:#FAFAFA">
-<p><svg id="rectsvg" xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="-1 -2 3 3"> <g transform="scale(1,-1)"> <rect id="transhere" width="1" height="1" fill="rgba(0,0,255,0.2)" style="stroke-width:0.01;stroke:rgb(0,0,0);"/> </g> </svg></p>
+<p><svg id="rectsvg" xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="-1 -2 3 3"> <g transform="scale(1,-1)"> <rect id="bg" width="1" height="1" fill="rgba(0,0,0,0)" style="stroke-width:0.001;stroke:rgb(0,0,0);"/> <rect id="transhere" width="1" height="1" fill="rgba(0,0,255,0.2)" style="stroke-width:0.01;stroke:rgb(0,0,0);"/> </g> </svg></p>
 </div>
+</div>
+<div id="determinant" class="section level2">
+<h2>Determinant</h2>
+<p>Now that you have gained a feeling or intuition around the transformation matrix, I’ll tell you a great geometric trick I learnt from <a href="https://www.youtube.com/watch?v=xX7qBVa9cQU">this youtube video</a>: the surface area of <span class="math inline">\(\boldsymbol{X&#39;}\)</span> is equal to the size of the <em>determinant</em> of the transformation matrix <span class="math inline">\(\boldsymbol{T}\)</span>. This was a great revelation for me that made determinants much more easy to comprehend. This works in higher dimensions too: the transformed volume of a <span class="math inline">\(k\)</span>-dimensional unit hypercube represents the size of the determinant of the transformation matrix <span class="math inline">\(\boldsymbol{T} \in \mathbb{R}^k\)</span>.</p>
+<p>But we’re not there yet: determinants can be negative, wheras volumes and areas can’t. Luckily, the sign of the determinant can be inferred from <span class="math inline">\(\boldsymbol{X&#39;}\)</span> too. Specifically, it has to do with the <em>chirality</em> of the shape defined by <span class="math inline">\(\boldsymbol{X&#39;}\)</span>. If the original square “flips” – that is, the original bottom right point becomes the new top left point or the original bottom left point becomes the new top right point – the sign of the determinant will be negative. In the illustration, that will make the shaded area red instead of blue.</p>
+<p>The determinant of the currently entered <span class="math inline">\(\boldsymbol{T}\)</span> is <span id="det">0</span>.</p>
+</div>
+<div id="top-tips-to-try" class="section level2">
+<h2>Top tips to try</h2>
+<ol style="list-style-type: decimal">
+<li>Try to make <span class="math inline">\(\boldsymbol{T}\)</span> look like a covariance matrix.</li>
+<li>Try to make the columns in <span class="math inline">\(\boldsymbol{T}\)</span> linearly dependent.</li>
+<li>Try to flip the rows or columns of <span class="math inline">\(\boldsymbol{T}\)</span> at any point.</li>
+</ol>
+</div>
+<div id="conclusion" class="section level2">
+<h2>Conclusion</h2>
+<p>Through exploring interactively what a transformation matrix does to a unit square, we can generate an intuition for the geometric meaning of the determinant.</p>
 <script type="text/javascript">
   var frm = document.getElementById("matform");
   function runForm() {
@@ -62,11 +93,21 @@ tags:
   function setMatrix(a,b,c,d,e,f) {
     let mat = "matrix(" + [a,b,c,d,e,f].join(",") + ")";
     document.getElementById("transhere").setAttribute("transform",mat);
-    if (a * d - c * b > 0) {
+    let det = a * d - c * b
+    document.getElementById("det").innerHTML = det.toString();
+    if (det > 0) {
       document.getElementById("transhere").setAttribute("fill","rgba(0,0,255,0.2)");
     } else {
       document.getElementById("transhere").setAttribute("fill","rgba(255,0,0,0.2)");
     }
   }
+  runForm();
   frm.onchange = runForm;
 </script>
+</div>
+<div class="footnotes">
+<hr />
+<ol>
+<li id="fn1"><p>Using JavaScript, SVG, and CSS. See the <a href="https://github.com/vankesteren/blog-source/blob/master/content/blog/2018-03-03-transformation-matrix.Rmd">source</a> of this blog post for more info.<a href="#fnref1">↩</a></p></li>
+</ol>
+</div>
