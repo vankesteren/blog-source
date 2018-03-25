@@ -1,7 +1,7 @@
 ---
 title: Basketball Training
 author: Erik-Jan van Kesteren
-date: '2018-03-02'
+date: '2018-03-25'
 slug: basketball-training
 draft: false
 categories:
@@ -21,7 +21,6 @@ knitr::opts_chunk$set(dev = 'svg')
 library(tidyverse)
 library(expm)
 library(firatheme)
-setupFont()
 ```
 
 ## Introduction
@@ -118,7 +117,8 @@ steady %>% as.tibble %>% set_names(probs) %>%
 In general, we can calculate the steady state easily from the transition matrix:
 
 ```{r steady}
-diag(transitionMatrix %^% 1000)
+someBigNumber <- 1000
+diag(transitionMatrix %^% someBigNumber)
 ```
 
 Note that this leads to a similar but different result than simply counting the probability of hitting or missing as a table, as we did in the first figure:
