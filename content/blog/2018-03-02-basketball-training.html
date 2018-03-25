@@ -3,7 +3,7 @@ title: Basketball Training
 author: Erik-Jan van Kesteren
 date: '2018-03-02'
 slug: basketball-training
-draft: true
+draft: false
 categories:
   - R
   - Analysis
@@ -20,43 +20,71 @@ tags:
 <h2>Introduction</h2>
 <p>I was on holiday and had to wait a while. Fortunately, close to where I was sitting there was a kid playing basketball all by himself. Of course I had to record how many hits and misses he made, to keep it as a nice dataset for further analysis.</p>
 <p>Here is the dataset:</p>
-<pre class="r"><code>b &lt;- c(&quot;miss&quot;,&quot;miss&quot;,&quot;miss&quot;,&quot;hit&quot;,&quot;miss&quot;,&quot;hit&quot;,&quot;miss&quot;, &quot;miss&quot;,
-       &quot;hit&quot;,&quot;hit&quot;,&quot;miss&quot;,&quot;miss&quot;,&quot;miss&quot;,&quot;miss&quot;, &quot;miss&quot;,&quot;miss&quot;,
-       &quot;miss&quot;,&quot;hit&quot;,&quot;hit&quot;,&quot;hit&quot;,&quot;miss&quot;,&quot;hit&quot;)</code></pre>
+<pre class="r"><code>basket &lt;- c(&quot;miss&quot;,&quot;miss&quot;,&quot;miss&quot;,&quot;hit&quot;,&quot;miss&quot;,&quot;hit&quot;,&quot;miss&quot;, &quot;miss&quot;,
+            &quot;hit&quot;,&quot;hit&quot;,&quot;miss&quot;,&quot;miss&quot;,&quot;miss&quot;,&quot;miss&quot;, &quot;miss&quot;,&quot;miss&quot;,
+            &quot;miss&quot;,&quot;hit&quot;,&quot;hit&quot;,&quot;hit&quot;,&quot;miss&quot;,&quot;hit&quot;)</code></pre>
 </div>
 <div id="what-can-we-do-with-this" class="section level2">
 <h2>What can we do with this?</h2>
-<p>Firstly, we can describe how often the kid hits manages to score a point:</p>
+<p>Firstly, we can describe how often the kid manages to score a point:</p>
 <p><img src="/blog/2018-03-02-basketball-training_files/figure-html/plot-1.svg" width="672" /></p>
-<p>So it looks like the kid misses a bit more than he hits. But there is much more information in this dataset: besides whether the kid hits or misses, we can say something about the <em>sequence</em> of these events. We can do this using a transition matrix;</p>
+<p>So it looks like the kid misses a bit more than he hits. But there is much more information in this dataset: besides whether the kid hits or misses, we can say something about the <em>sequence</em> of these events.</p>
+</div>
+<div id="transition-matrix" class="section level2">
+<h2>Transition matrix</h2>
+<p>From a sequence of observations, it is possible to construct a transition matrix</p>
 <p><span class="math display">\[
 \begin{bmatrix}
 A &amp; B \\
 C &amp; D 
 \end{bmatrix}
-\]</span> Entering observed probabilities in <span class="math inline">\(\{A, B, C, D\}\)</span> this matrix tells us how likely it is that:</p>
+\]</span> Where the elements indicate the probability that:</p>
 <ul>
-<li><span class="math inline">\(A\)</span> a hit is followed by another hit</li>
-<li><span class="math inline">\(B\)</span> a hit is followed by a miss</li>
-<li><span class="math inline">\(C\)</span> a miss is followed by a hit</li>
-<li><span class="math inline">\(D\)</span> a miss is followed by another hit</li>
+<li><span class="math inline">\(A\)</span>: a hit is followed by another hit</li>
+<li><span class="math inline">\(B\)</span>: a hit is followed by a miss</li>
+<li><span class="math inline">\(C\)</span>: a miss is followed by a hit</li>
+<li><span class="math inline">\(D\)</span>: a miss is followed by another miss</li>
 </ul>
-<p>Here is an R function for generating the transition matrix:</p>
+<p>In other words, <span class="math inline">\(B\)</span> and <span class="math inline">\(C\)</span> indicate how likely it is to <em>transition</em> from hit to miss and vice versa, whereas <span class="math inline">\(A\)</span> and <span class="math inline">\(C\)</span> indicate how likely it is to stay in the same state (<em>transition</em> to self).</p>
+<p>If we don’t know the true probabilities, we can enter the observed probabilities into the matrix. Here is an <code>R</code> function for generating the transition matrix from the data vector of before:</p>
 <pre class="r"><code>transMat &lt;- function(x, prob = TRUE) {
   X &lt;- t(as.matrix(x))
   tt &lt;- table( c(X[,-ncol(X)]), c(X[,-1]) )
-  if(prob) tt &lt;- tt / rowSums(tt)
+  if (prob) tt &lt;- tt / rowSums(tt)
   tt
 }
 
-m &lt;- transMat(b)
-print(m, digits = 2)</code></pre>
+transitionMatrix &lt;- transMat(basket)
+print(transitionMatrix, digits = 2)</code></pre>
 <pre><code>##       
 ##         hit miss
 ##   hit  0.43 0.57
 ##   miss 0.36 0.64</code></pre>
-<p>This transition matrix completely defines the 2-state markov chain. Assuming these probabilities are stable, we can now generate markov processes just like the one we observed. And we can nicely visualise it using <a href="http://setosa.io/ev/markov-chains/">this markov chain generator post</a> by <a href="http://setosa.io/ev/">setosa</a>. In the image below, A equals a hit, and B equals a miss (Go ahead, play around, it’s completely interactive!)</p>
-<iframe src="http://setosa.io/markov/index.html#%7B%22tm%22%3A%5B%5B0.43%2C0.57%5D%2C%5B0.36%2C0.64%5D%5D%7D" width="100%" height="350px" style="border:none">
-</iframe>
-<p><em>Frame: <a href="http://setosa.io/ev/markov-chains/">Setosa</a> markov chain visualisation</em></p>
+</div>
+<div id="markov-chain" class="section level2">
+<h2>Markov chain</h2>
+<p>This transition matrix completely defines the 2-state markov chain. Assuming these probabilities are stable, we can now generate processes just like the one we observed. And we can nicely visualise it using <a href="http://setosa.io/ev/markov-chains/">this markov chain generator post</a> by <a href="http://setosa.io/ev/">setosa</a>. Go to <a href="http://setosa.io/markov/index.html#%7B%22tm%22%3A%5B%5B0.43%2C0.57%5D%2C%5B0.36%2C0.64%5D%5D%7D">this link</a> to play around!</p>
+<p><img src="../../img/mcbasket.png" style="width:70%;display:block; margin-left:auto; margin-right:auto"></img></p>
+</div>
+<div id="steady-state" class="section level2">
+<h2>Steady state</h2>
+<p>If we assume this chain is stable over time, there is another nice property. Irrespective of the initial probabilities of hitting or missing that we choose, after a few steps of the markov process, the probability of hitting the basket already converges to the <em>steady state</em>:</p>
+<p><img src="/blog/2018-03-02-basketball-training_files/figure-html/initprob-1.svg" width="672" /></p>
+<p>In general, we can calculate the steady state easily from the transition matrix:</p>
+<pre class="r"><code>diag(transitionMatrix %^% 1000)</code></pre>
+<pre><code>##       hit      miss 
+## 0.3846154 0.6153846</code></pre>
+<p>Note that this leads to a similar but different result than simply counting the probability of hitting or missing as a table, as we did in the first figure:</p>
+<pre class="r"><code>table(basket)/length(basket)</code></pre>
+<pre><code>## basket
+##       hit      miss 
+## 0.3636364 0.6363636</code></pre>
+</div>
+<div id="questions" class="section level1">
+<h1>Questions</h1>
+<ul>
+<li>What should we trust here? The naïve probabilities or the markov steady state?</li>
+<li>Which assumptions lead to this discrepancy?</li>
+<li>Does the transition matrix really contain more relevant information about this process than the observed hit rate?</li>
+</ul>
 </div>

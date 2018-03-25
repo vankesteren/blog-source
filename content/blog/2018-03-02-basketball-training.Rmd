@@ -3,7 +3,7 @@ title: Basketball Training
 author: Erik-Jan van Kesteren
 date: '2018-03-02'
 slug: basketball-training
-draft: true
+draft: false
 categories:
   - R
   - Analysis
@@ -18,40 +18,10 @@ tags:
 ```{r setup, include=FALSE, echo=FALSE,render=FALSE,warning=FALSE,background=TRUE, message=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_chunk$set(dev = 'svg')
-library(ggplot2)
-# edited from
-# https://github.com/traffordDataLab/assets/blob/master/theme/ggplot2/theme_lab.R
-theme_ej <- function () { 
-  theme_grey(base_size = 11.5, base_family = "sans") %+replace% 
-    theme(
-      # add padding to the plot
-      plot.margin = unit(rep(0.5, 4), "cm"),
-      # remove the plot background and border
-      plot.background = element_blank(),
-      panel.background = element_blank(),
-      panel.border = element_blank(),
-      # make the legend and strip background transparent
-      legend.background = element_rect(fill = "transparent", colour = NA),
-      legend.key = element_rect(fill = "transparent", colour = NA),
-      strip.background = element_rect(fill = "transparent", colour = NA),
-      # add light, dotted major grid lines only
-      panel.grid.major = element_line(linetype = "dotted", colour = "#757575", size = 0.3),
-      panel.grid.minor = element_blank(),
-      # remove the axis tick marks and hide axis lines
-      axis.ticks = element_blank(),
-      axis.line = element_line(color = "#FFFFFF", size = 0.3),
-      # modify the bottom margins of the title and subtitle
-      plot.title = element_text(size = 18, colour = "#757575", hjust = 0, margin = margin(b = 4)),
-      plot.subtitle = element_text(size = 12, colour = "#757575", hjust = 0, margin = margin(b = 10)),
-      # add padding to the caption
-      plot.caption = element_text(size = 10, colour = "#212121", hjust = 1, margin = margin(t = 15)),
-      axis.title = element_text(size = 11, colour = "#757575", face = "plain", hjust = 1),
-      axis.text = element_text(size = 10, colour = "#757575", face = "plain"),
-      legend.title = element_text(size = 12, colour = "#757575"),
-      legend.text = element_text(size = 10, colour = "#757575"),
-      strip.text = element_text( size = 12, colour = "#757575", face = "plain")
-    )
-}
+library(tidyverse)
+library(expm)
+library(firatheme)
+setupFont()
 ```
 
 ## Introduction
@@ -60,22 +30,26 @@ I was on holiday and had to wait a while. Fortunately, close to where I was sitt
 
 Here is the dataset:
 ```{r init}
-b <- c("miss","miss","miss","hit","miss","hit","miss", "miss",
-       "hit","hit","miss","miss","miss","miss", "miss","miss",
-       "miss","hit","hit","hit","miss","hit")
+basket <- c("miss","miss","miss","hit","miss","hit","miss", "miss",
+            "hit","hit","miss","miss","miss","miss", "miss","miss",
+            "miss","hit","hit","hit","miss","hit")
 ```
 
 ## What can we do with this?
-Firstly, we can describe how often the kid hits manages to score a point:
+Firstly, we can describe how often the kid manages to score a point:
 
 ```{r plot, echo = FALSE}
-ggplot(data.frame(basket = b), aes(x = basket)) + 
-  geom_bar(fill = "#00008B") + 
-  labs(x = "Throw", y = "Count") +
-  theme_ej()
+ggplot(data.frame(basket = basket), aes(x = basket)) + 
+  geom_bar(fill = ejCols[c(3, 5)], width = 0.7) + 
+  labs(x = "Throw", y = "Count", title = "Basketball hits and misses") +
+  theme_fira()
 ```
 
-So it looks like the kid misses a bit more than he hits. But there is much more information in this dataset: besides whether the kid hits or misses, we can say something about the _sequence_ of these events. We can do this using a transition matrix;
+So it looks like the kid misses a bit more than he hits. But there is much more information in this dataset: besides whether the kid hits or misses, we can say something about the _sequence_ of these events. 
+
+## Transition matrix
+
+From a sequence of observations, it is possible to construct a transition matrix
 
 $$
 \begin{bmatrix}
@@ -83,29 +57,79 @@ A & B \\
 C & D 
 \end{bmatrix}
 $$
-Entering observed probabilities in $\{A, B, C, D\}$ this matrix tells us how likely it is that:
+Where the elements indicate the probability that:
 
-- $A$ a hit is followed by another hit
-- $B$ a hit is followed by a miss
-- $C$ a miss is followed by a hit
-- $D$ a miss is followed by another hit
-  
-Here is an R function for generating the transition matrix:
+- $A$: a hit is followed by another hit
+- $B$: a hit is followed by a miss
+- $C$: a miss is followed by a hit
+- $D$: a miss is followed by another miss
+
+In other words, $B$ and $C$ indicate how likely it is to _transition_ from hit to miss and vice versa, whereas $A$ and $C$ indicate how likely it is to stay in the same state (_transition_ to self).
+
+If we don't know the true probabilities, we can enter the observed probabilities into the matrix. Here is an `R` function for generating the transition matrix from the data vector of before:
+
 ```{r transmat}
 transMat <- function(x, prob = TRUE) {
   X <- t(as.matrix(x))
   tt <- table( c(X[,-ncol(X)]), c(X[,-1]) )
-  if(prob) tt <- tt / rowSums(tt)
+  if (prob) tt <- tt / rowSums(tt)
   tt
 }
 
-m <- transMat(b)
-print(m, digits = 2)
+transitionMatrix <- transMat(basket)
+print(transitionMatrix, digits = 2)
 
 ```
 
-This transition matrix completely defines the 2-state markov chain. Assuming these probabilities are stable, we can now generate markov processes just like the one we observed. And we can nicely visualise it using [this markov chain generator post](http://setosa.io/ev/markov-chains/) by [setosa](http://setosa.io/ev/). In the image below, A equals a hit, and B equals a miss (Go ahead, play around, it's completely interactive!)
+## Markov chain
+This transition matrix completely defines the 2-state markov chain. Assuming these probabilities are stable, we can now generate processes just like the one we observed. And we can nicely visualise it using [this markov chain generator post](http://setosa.io/ev/markov-chains/) by [setosa](http://setosa.io/ev/). Go to [this link](http://setosa.io/markov/index.html#%7B%22tm%22%3A%5B%5B0.43%2C0.57%5D%2C%5B0.36%2C0.64%5D%5D%7D) to play around!
 
-<iframe src="http://setosa.io/markov/index.html#%7B%22tm%22%3A%5B%5B0.43%2C0.57%5D%2C%5B0.36%2C0.64%5D%5D%7D" width="100%" height="350px" style="border:none"></iframe>
+<img src="../../img/mcbasket.png" style="width:70%;display:block; margin-left:auto; margin-right:auto"></img>
 
-_Frame: [Setosa](http://setosa.io/ev/markov-chains/) markov chain visualisation_
+## Steady state 
+If we assume this chain is stable over time, there is another nice property. Irrespective of the initial probabilities of hitting or missing that we choose, after a few steps of the markov process, the probability of hitting the basket already converges to the _steady state_:
+
+```{r initprob, echo=FALSE}
+probs <- (1:10)/10
+steady <- matrix(0, ncol = 10, nrow = 7)
+
+for (i in 1:7) {
+  for (p in 1:10) {
+    outprobs <- c(probs[p], 1-probs[p])%*%(transitionMatrix%^%i)
+    steady[i, p] <- outprobs[1]
+  }
+}
+
+steady %>% as.tibble %>% set_names(probs) %>% 
+  mutate(moves = 1:7) %>% gather("initial", "final", -moves) %>% 
+  arrange(-as.numeric(initial)) %>% 
+  ggplot(aes(x = moves, y = final, 
+             colour = factor(initial, 
+                             levels = unique(initial)))) +
+  geom_line(size = 1) + 
+  labs(title = "Converging to steady state", 
+       colour = "Initial hit probability", 
+       y = "Hit probability on this move", 
+       x = "Move number") +
+  theme_fira()
+
+```
+
+In general, we can calculate the steady state easily from the transition matrix:
+
+```{r steady}
+diag(transitionMatrix %^% 1000)
+```
+
+Note that this leads to a similar but different result than simply counting the probability of hitting or missing as a table, as we did in the first figure:
+
+```{r proptab}
+table(basket)/length(basket)
+``` 
+
+# Questions
+
+- What should we trust here? The naïve probabilities or the markov steady state?
+- Which assumptions lead to this discrepancy?
+- Does the transition matrix really contain more relevant information about this process than the observed hit rate?
+
