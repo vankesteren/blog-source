@@ -15,11 +15,9 @@ tags:
 ```{r setup, include=FALSE, echo=FALSE,render=FALSE,warning=FALSE,background=TRUE, message=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_chunk$set(dev = 'svg')
+library(tidyverse)
+library(firatheme)
 ```
-
-###[Back to index](../index.html)
-
-
 
 ## The problem
 How do we calculate a sample mean? This is probably one of the most basic questions in statistics, with as its common answer the following: Given a vector of sample values $\bf{x}$ of length $N$, the sample mean $m$ is defined as 
@@ -54,7 +52,7 @@ print(m_i)
 
 Note that in the above code we never save the full vector $\bf{x}$; we only ever save the current and previous versions of the mean. This is perfect for an extremely large, variable length input vector such as the one I talked about in the introduction!
 
-```{r seqplot, fig.align="center"}
+```{r sequence}
 set.seed(142857)
 # let's assume we receive data of length 1234
 streamlength <- 1234
@@ -67,12 +65,15 @@ for (i in 1:streamlength) {
                      x_i,
                      means[i-1] + (x_i-means[i-1]) / i)
 }
+```
 
-par(family="serif")
-plot(1:streamlength, means, type = "l", 
-     main = "Development of mean over stream",
-     xlab = "i", ylab = "Mean", bty = "L", lwd = 1.5)
-
+```{r seqplot, echo = FALSE}
+ggplot(data.frame(stream = 1:streamlength, means = means),
+       aes(x = stream, y = means))+
+  geom_line(size = 0.8, col = ejCols[1]) +
+  labs(x = "# in stream", y = "Mean estimate", 
+       title = "Development of mean over stream") +
+  theme_fira()
 
 ```
 

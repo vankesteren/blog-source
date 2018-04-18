@@ -14,9 +14,6 @@ tags:
 
 
 
-<div id="back-to-index" class="section level3">
-<h3><a href="../index.html">Back to index</a></h3>
-</div>
 <div id="the-problem" class="section level2">
 <h2>The problem</h2>
 <p>How do we calculate a sample mean? This is probably one of the most basic questions in statistics, with as its common answer the following: Given a vector of sample values <span class="math inline">\(\bf{x}\)</span> of length <span class="math inline">\(N\)</span>, the sample mean <span class="math inline">\(m\)</span> is defined as <span class="math display">\[m = \frac{1}{N}\sum^N_{i=1}x_i\]</span></p>
@@ -54,13 +51,8 @@ for (i in 1:streamlength) {
   means[i] &lt;- ifelse(i == 1,
                      x_i,
                      means[i-1] + (x_i-means[i-1]) / i)
-}
-
-par(family=&quot;serif&quot;)
-plot(1:streamlength, means, type = &quot;l&quot;, 
-     main = &quot;Development of mean over stream&quot;,
-     xlab = &quot;i&quot;, ylab = &quot;Mean&quot;, bty = &quot;L&quot;, lwd = 1.5)</code></pre>
-<p><img src="/blog/2017-08-01-sequential-statistics_files/figure-html/seqplot-1.svg" width="672" style="display: block; margin: auto;" /></p>
+}</code></pre>
+<p><img src="/blog/2017-08-01-sequential-statistics_files/figure-html/seqplot-1.svg" width="672" /></p>
 <p>Notice the big changes at the start of the stream, and the smaller changes at the end, asymptotically converging to the “true” mean value that we set here at 0.</p>
 </div>
 <div id="bayesian-estimation" class="section level2">
